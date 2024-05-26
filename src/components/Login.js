@@ -2,6 +2,8 @@ import React from "react";
 import Header from "./Header";
 import { useState, useRef } from "react";
 import { checkValidData } from "../utils/validate";
+import { auth } from "../utils/firebase";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 
 const Login = () => {
   const [isSignInForm, setSignInForm] = useState(true);
@@ -15,7 +17,37 @@ const Login = () => {
   const handleButtonClick = () => {
     const message = checkValidData(email.current.value, password.current.value);
     setErrorMessage(message);
-
+    if (message) return;
+    if (!isSignInForm) {
+      createUserWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
+        .then((userCredential) => {
+          // Signed up
+          const user = userCredential.user;
+          console.log(user);
+          // ...
+        })
+        .catch((error) => {
+          const errorCode = error.code;
+          const errorMessage = error.message;
+          // ..
+        });
+    } else {
+      signInWithEmailAndPassword(auth, email.current.value, password.current.value)
+        .then((userCredential) => {
+          // Signed in
+          const user = userCredential.user;
+          // ...
+        })
+        .catch((error) => {
+          setErrorMessage(error.code + " - "+ error.message);
+          const errorCode = error.code;
+          const errorMessage = error.message;
+        });
+    }
   };
 
   const name = useRef(null);
@@ -38,7 +70,7 @@ const Login = () => {
         <h1 className="font-bold text-3xl py-4">
           {isSignInForm ? "Sign In" : "Sign Up"}
         </h1>
-        {isSignInForm && (
+        {!isSignInForm && (
           <input
             ref={name}
             type="text"
@@ -62,15 +94,14 @@ const Login = () => {
           className="p-4 my-6 bg-red-700 w-full rounded-lg"
           onClick={handleButtonClick}
         >
-          Sign in
+          {isSignInForm ? "Sign In" : "Sign Up"}
         </button>
         <p className="text-red-600 text-sm">{errorMessage}</p>
         <p className="cursor-pointer" onClick={toggleSignInForm}>
-          {!isSignInForm
-            ? "Already a user, Sign In"
-            : "New to Netflix? Sign Up Now."}
+          {isSignInForm
+            ? " New to Netflix? Sign Up Now."
+            : " Already a user, Sign In."}
         </p>
-
       </form>
     </div>
   );
