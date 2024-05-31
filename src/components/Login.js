@@ -3,9 +3,19 @@ import Header from "./Header";
 import { useState, useRef } from "react";
 import { checkValidData } from "../utils/validate";
 import { auth } from "../utils/firebase";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
 
 const Login = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
   const [isSignInForm, setSignInForm] = useState(true);
 
   const [errorMessage, setErrorMessage] = useState("");
@@ -27,6 +37,21 @@ const Login = () => {
         .then((userCredential) => {
           // Signed up
           const user = userCredential.user;
+          updateProfile(user, {
+            displayName: name.current.value,
+            photoURL: "https://avatars.githubusercontent.com/u/69319046?v=4",
+          })
+            .then(() => {
+              const { uid, displayName, email, photoURL } = user;
+              dispatch(addUser({ uid: uid, email: email,  displayName: displayName, photoURL: photoURL }))
+              navigate("/browse");
+            })
+            .catch((error) => {
+              // An error occurred
+              // ...
+            });
+
+          
           console.log(user);
           // ...
         })
@@ -36,14 +61,19 @@ const Login = () => {
           // ..
         });
     } else {
-      signInWithEmailAndPassword(auth, email.current.value, password.current.value)
+      signInWithEmailAndPassword(
+        auth,
+        email.current.value,
+        password.current.value
+      )
         .then((userCredential) => {
           // Signed in
           const user = userCredential.user;
+          navigate("/browse");
           // ...
         })
         .catch((error) => {
-          setErrorMessage(error.code + " - "+ error.message);
+          setErrorMessage(error.code + " - " + error.message);
           const errorCode = error.code;
           const errorMessage = error.message;
         });
